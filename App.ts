@@ -63,6 +63,10 @@ export interface QueryAble<T extends Object, U> {
 }
 export interface InitialQueryAble<U extends Object> {
     select: <K extends keyof U>(...keys: K[]) => QueryAble<Omit<U, K>, Pick<U, K>>
+    include: <K extends IsOfType<U, Array<any>>, B extends Unpack<U[K]>, C extends keyof B>(
+        key: K,
+        f: Fun<InitialQueryAble<B>, QueryAble<Omit<B, C>, Pick<B, C>>>
+    ) => QueryAble<Omit<U, K>,  PickNested<U, K, Pick<B, C>>>
     run: () => U
 }
 
@@ -70,6 +74,15 @@ export const MakeQueryAble = <A extends Object>(obj: A): InitialQueryAble<A> => 
     select: function <K extends keyof A>(...keys: K[]): QueryAble<Omit<A, K>, Pick<A, K>> {
         return QueryAble(omitMany(obj,keys), pickMany(obj, keys))
     },
+
+    include: function <K extends IsOfType<A, Array<any>>, E extends Unpack<A[K]>, C extends keyof E>(
+        key: K,
+        f: Fun<InitialQueryAble<E>, QueryAble<Omit<E, C>, Pick<E, C>>>
+    ): QueryAble<Omit<A, K>,  PickNested<A, K, Pick<E, C>>> {
+        let arr = obj[key] as E[]
+        return QueryAble(omitOne(obj,key),  { [key]: arr.map((x) => f(MakeQueryAble(x)).Run()) } as PickNested<A, K, Pick<E, C>>)
+    },
+    
     run: () => obj,
 })
 
@@ -96,10 +109,6 @@ export const QueryAble = <A extends Object, B>(obj: A, newObj: B): QueryAble<A, 
     Run: () => newObj,
 })
 
-const test = MakeQueryAble(student)
-    .select('Name')
-    .select('Surname')
-    .include('Grades', (g) => g.select('CourseName'))
-    .Run()
+const test = MakeQueryAble(student).include('Grades', p => p.select('CourseName')).select('Surname').Run()
 
 console.log(test)
