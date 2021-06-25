@@ -79,6 +79,15 @@ export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: 
 
 type Unit = {}
 
+export type Comperator<T> = {
+    ASC: Fun<T, boolean>
+    DESC: Fun<T, boolean>
+}
+
+export const Comperator = <T>(comparer: T): Comperator<T> => ({
+    ASC: x => x <= comparer,
+    DESC: x => comparer <= x
+})
 export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
     MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
 
@@ -103,6 +112,7 @@ export let omitMany = <T, K extends keyof T>(entity: T, props: K[]): Omit<T, K> 
 
 export type QueryAble<a, b> = {
     select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
+    OrderBy: <k extends keyof a>( f: (x1:b,x2:b) => number) => QueryAble<a,b>
     include: <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
         f: Fun<InitialQueryAble<d>, QueryAble<Omit<d, c>, Pick<d, c>>>
@@ -128,6 +138,11 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
                     )
             )
         )
+    },
+    OrderBy: function<k extends keyof a>( f: (x1:b,x2:b) => number) : QueryAble<a,b> {
+        
+        const h = obj.mapRight( x => MakeList(x.toArray().sort(f)))
+        return MakeQueryAble(h) 
     },
     include: function <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
@@ -162,11 +177,11 @@ export const makeInitialQuery = <a>(state: Query<a, Unit>): InitialQueryAble<a> 
     },
 })
 
-
 const data = State<Student, Unit>([student1, student2, student3])
 const vvvv = makeInitialQuery(data)
     .select('Surname')
-    .include('Grades', (g) => g.select('CourseName').include('Teachers', (t) => t.select('Profession','Name','Surname')))
+    .include('Grades', (g) => g.select('Grade').include('Teachers', (t) => t.select('Profession','Name','Surname')))
+    .OrderBy((g1,g2) => g1.Grades[0].Grade - g2.Grades[0].Grade)
     .run()
 
-console.log(vvvv[0].Grades[0].Teachers[0])
+console.log(vvvv)
