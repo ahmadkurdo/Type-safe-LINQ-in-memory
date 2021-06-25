@@ -128,8 +128,8 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
     },
     OrderBy: function<k extends keyof a>( f: (x1:b,x2:b) => number) : QueryAble<a,b> {
         
-        const h = obj.mapRight( x => MakeList(x.toArray().sort(f)))
-        return MakeQueryAble(h) 
+        
+        return MakeQueryAble(obj.mapRight( x => MakeList(x.toArray().sort(f))))
     },
     include: function <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
@@ -142,7 +142,7 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
                     mergeZip(
                         zip(
                             right,
-                            obj.fst.map((x) => ({ [key]: f(makeInitialQuery(State(x[key] as any))).run() } as any))
+                            obj.fst.map((x) => ({ [key]: f(makeInitialQuerAble(State(x[key] as any))).run() } as any))
                         )
                     )
             )
@@ -156,7 +156,7 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
 export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
     MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
 
-export const makeInitialQuery = <a>(state: Query<a, Unit>): InitialQueryAble<a> => ({
+export const makeInitialQuerAble = <a>(state: Query<a, Unit>): InitialQueryAble<a> => ({
     select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, Pick<a, k>> {
         return MakeQueryAble(
             state.map(
@@ -168,7 +168,7 @@ export const makeInitialQuery = <a>(state: Query<a, Unit>): InitialQueryAble<a> 
 })
 
 const data = State<Student, Unit>([student1, student2, student3])
-const vvvv = makeInitialQuery(data)
+const vvvv = makeInitialQuerAble(data)
     .select('Surname')
     .include('Grades', (g) => g.select('Grade').include('Teachers', (t) => t.select('Profession','Name','Surname')))
     .OrderBy((g1,g2) => g1.Grades[0].Grade - g2.Grades[0].Grade)
