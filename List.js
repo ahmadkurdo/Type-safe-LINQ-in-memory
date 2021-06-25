@@ -53,6 +53,18 @@ var MakeList = function (data) { return ({
     },
     toArray: function () {
         return this.data;
+    },
+    sort: function (key, order) {
+        return exports.MakeList(data.sort(function (obj1, obj2) {
+            switch (order) {
+                case 'ASC': {
+                    return obj1[key] > obj2[key] ? 1 : -1;
+                }
+                case 'DESC': {
+                    return obj1[key] < obj2[key] ? 1 : -1;
+                }
+            }
+        }));
     }
 }); };
 exports.MakeList = MakeList;

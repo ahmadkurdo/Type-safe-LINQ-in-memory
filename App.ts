@@ -1,4 +1,4 @@
-import { List, MakeList, MakePair, mergeZip, Pair, zip } from './List'
+import { IsNotOfType, List, MakeList, MakePair, mergeZip, Pair, zip } from './List'
 
 type Student = {
     Name: string
@@ -79,7 +79,6 @@ export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: 
 
 type Unit = {}
 
-
 export let pickMany = <T, K extends keyof T>(entity: T, props: K[]) => {
     return props.reduce((s, prop) => ((s[prop] = entity[prop]), s), {} as Pick<T, K>)
 }
@@ -99,7 +98,7 @@ export let omitMany = <T, K extends keyof T>(entity: T, props: K[]): Omit<T, K> 
 
 export type QueryAble<a, b> = {
     select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
-    OrderBy: <k extends keyof a>( f: (x1:b,x2:b) => number) => QueryAble<a,b>
+    OrderBy: <k extends IsNotOfType<b, List<any> | Array<any>>>(key: k, order: 'ASC' | 'DESC') => QueryAble<a, b>
     include: <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
         f: Fun<InitialQueryAble<d>, QueryAble<Omit<d, c>, Pick<d, c>>>
@@ -109,7 +108,6 @@ export type QueryAble<a, b> = {
 export type InitialQueryAble<a> = {
     select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
 }
-
 
 export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
     select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, b & Pick<a, k>> {
@@ -126,10 +124,11 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
             )
         )
     },
-    OrderBy: function<k extends keyof a>( f: (x1:b,x2:b) => number) : QueryAble<a,b> {
-        
-        
-        return MakeQueryAble(obj.mapRight( x => MakeList(x.toArray().sort(f))))
+    OrderBy: function <k extends IsNotOfType<b, List<any> | Array<any>>>(
+        key: k,
+        order: 'ASC' | 'DESC'
+    ): QueryAble<a, b> {
+        return MakeQueryAble(obj.mapRight((x) => x.sort(key, order)))
     },
     include: function <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
@@ -153,8 +152,7 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
     },
 })
 
-export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
-    MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
+export const State = <a, b>(x: a[], y?: b[]): Query<a, b> => MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
 
 export const makeInitialQuerAble = <a>(state: Query<a, Unit>): InitialQueryAble<a> => ({
     select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, Pick<a, k>> {
@@ -170,8 +168,10 @@ export const makeInitialQuerAble = <a>(state: Query<a, Unit>): InitialQueryAble<
 const data = State<Student, Unit>([student1, student2, student3])
 const vvvv = makeInitialQuerAble(data)
     .select('Surname')
-    .include('Grades', (g) => g.select('Grade').include('Teachers', (t) => t.select('Profession','Name','Surname')))
-    .OrderBy((g1,g2) => g1.Grades[0].Grade - g2.Grades[0].Grade)
+    .include('Grades', (g) =>
+        g.select('Grade').include('Teachers', (t) => t.select('Profession', 'Name', 'Surname').OrderBy('Name', 'ASC'))
+    )
+    .OrderBy('Surname', 'DESC')
     .run()
 
 console.log(vvvv)

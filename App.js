@@ -11,7 +11,7 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 exports.__esModule = true;
-exports.makeInitialQuery = exports.MakeQueryAble = exports.omitMany = exports.omitOne = exports.pickMany = exports.State = exports.Comperator = void 0;
+exports.makeInitialQuerAble = exports.State = exports.MakeQueryAble = exports.omitMany = exports.omitOne = exports.pickMany = void 0;
 var List_1 = require("./List");
 var student1 = {
     Name: 'Ahmed',
@@ -58,15 +58,6 @@ var student3 = {
         },
     ]
 };
-var Comperator = function (comparer) { return ({
-    ASC: function (x) { return x <= comparer; },
-    DESC: function (x) { return comparer <= x; }
-}); };
-exports.Comperator = Comperator;
-var State = function (x, y) {
-    return List_1.MakePair(List_1.MakeList(x), List_1.MakeList(y ? y : []));
-};
-exports.State = State;
 var pickMany = function (entity, props) {
     return props.reduce(function (s, prop) { return ((s[prop] = entity[prop]), s); }, {});
 };
@@ -94,15 +85,14 @@ var MakeQueryAble = function (obj) { return ({
             return List_1.mergeZip(List_1.zip(right, obj.fst.map(function (x) { return exports.pickMany(x, keys); })));
         }));
     },
-    OrderBy: function (f) {
-        var h = obj.mapRight(function (x) { return List_1.MakeList(x.toArray().sort(f)); });
-        return exports.MakeQueryAble(h);
+    OrderBy: function (key, order) {
+        return exports.MakeQueryAble(obj.mapRight(function (x) { return x.sort(key, order); }));
     },
     include: function (key, f) {
         return exports.MakeQueryAble(obj.map(function (left) { return left.map(function (x) { return exports.omitOne(x, key); }); }, function (right) {
             return List_1.mergeZip(List_1.zip(right, obj.fst.map(function (x) {
                 var _a;
-                return (_a = {}, _a[key] = f(exports.makeInitialQuery(exports.State(x[key]))).run(), _a);
+                return (_a = {}, _a[key] = f(exports.makeInitialQuerAble(exports.State(x[key]))).run(), _a);
             })));
         }));
     },
@@ -111,7 +101,9 @@ var MakeQueryAble = function (obj) { return ({
     }
 }); };
 exports.MakeQueryAble = MakeQueryAble;
-var makeInitialQuery = function (state) { return ({
+var State = function (x, y) { return List_1.MakePair(List_1.MakeList(x), List_1.MakeList(y ? y : [])); };
+exports.State = State;
+var makeInitialQuerAble = function (state) { return ({
     select: function () {
         var keys = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -120,11 +112,11 @@ var makeInitialQuery = function (state) { return ({
         return exports.MakeQueryAble(state.map(function (left) { return left.map(function (x) { return exports.omitMany(x, keys); }); }, function (right) { return state.fst.map(function (x) { return exports.pickMany(x, keys); }); }));
     }
 }); };
-exports.makeInitialQuery = makeInitialQuery;
+exports.makeInitialQuerAble = makeInitialQuerAble;
 var data = exports.State([student1, student2, student3]);
-var vvvv = exports.makeInitialQuery(data)
+var vvvv = exports.makeInitialQuerAble(data)
     .select('Surname')
     .include('Grades', function (g) { return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); }); })
-    .OrderBy(function (g1, g2) { return g1.Grades[0].Grade - g2.Grades[0].Grade; })
+    .OrderBy('Surname', 'DESC')
     .run();
 console.log(vvvv);

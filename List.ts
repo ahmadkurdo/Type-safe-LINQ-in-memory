@@ -8,6 +8,9 @@ export type Pair<a, b> = {
     map: <c, d>(f: (_: a) => c, g: (_: b) => d) => Pair<c, d>
 }
 
+export type IsNotOfType<A, B> = { [C in keyof A]: A[C] extends B ? never : C }[keyof A]
+
+
 export type Unit = {}
 
 export const Unit = {}
@@ -41,7 +44,8 @@ export type List<a> = {
     size: () => number
     map: <b>(f: (_: a) => b) => List<b>
     concat: (l2: List<a>) => List<a>
-    toArray: () => Array<a>
+    toArray: () => Array<a>,
+    sort: <k extends IsNotOfType<a,List<any> | Array<any>>>(key:k, order: "ASC" | "DESC") => List<a>
 }
 
 export const MakeList = <a>(data: Array<a>): List<a> => ({
@@ -67,6 +71,18 @@ export const MakeList = <a>(data: Array<a>): List<a> => ({
     toArray: function (): Array<a> {
         return this.data
     },
+    sort: function <k extends  IsNotOfType<a,List<any> | Array<any>>>(key:k, order: 'ASC' | 'DESC') : List<a>{
+        return MakeList(data.sort((obj1, obj2) => {
+            switch (order) {
+                case 'ASC': {
+                    return obj1[key] > obj2[key] ? 1 : -1
+                }
+                case 'DESC': {
+                    return obj1[key] < obj2[key] ? 1 : -1
+                }
+            }
+        }))
+    }
 })
 
 export const zip = <a, b>(l1: List<a>, l2: List<b>): List<Pair<a, b>> =>
