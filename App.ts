@@ -1,3 +1,5 @@
+import { List, MakeList, MakePair, mergeZip, Pair, zip } from './List'
+
 type Student = {
     Name: string
     Surname: string
@@ -6,32 +8,81 @@ type Student = {
             Grade: number
             CourseId: number
             CourseName: string
+            Teachers: Teacher[]
         }
     ]
 }
-let student: Student = {
+
+type Teacher = {
+    Name: string
+    Surname: string
+    Profession: string
+}
+
+let student1: Student = {
     Name: 'Ahmed',
     Surname: 'Rashid',
     Grades: [
         {
             Grade: 10,
             CourseId: 10,
-            CourseName: 'Math',
+            CourseName: 'Chemistry',
+            Teachers: [
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Eningeer' },
+                { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
+            ],
         },
     ],
 }
 
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+let student2: Student = {
+    Name: 'Ali',
+    Surname: 'G',
+    Grades: [
+        {
+            Grade: 5,
+            CourseId: 6,
+            CourseName: 'Biology',
+            Teachers: [
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Eningeer' },
+                { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
+            ],
+        },
+    ],
+}
+
+let student3: Student = {
+    Name: 'Mohammed',
+    Surname: 'Ali',
+    Grades: [
+        {
+            Grade: 8,
+            CourseId: 15,
+            CourseName: 'Math',
+            Teachers: [
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Eningeer' },
+                { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
+            ],
+        },
+    ],
+}
 
 type Fun<A, B> = (_: A) => B
 
 type Unpack<A> = A extends Array<infer b> ? b : never
 
+export type Query<a, b> = Pair<List<a>, List<b>>
+
 export type IsOfType<A, B> = { [C in keyof A]: A[C] extends B ? C : never }[keyof A]
 
 export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: A[x] } & { [x in K]: b[] }
 
-export const Omit = <A, B extends keyof A>(key: B, { [key]: _, ...values }: A): Omit<A, B> => values
+type Unit = {}
+
+export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
+    MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
+
+
 
 export let pickMany = <T, K extends keyof T>(entity: T, props: K[]) => {
     return props.reduce((s, prop) => ((s[prop] = entity[prop]), s), {} as Pick<T, K>)
@@ -50,65 +101,72 @@ export let omitMany = <T, K extends keyof T>(entity: T, props: K[]): Omit<T, K> 
     return result
 }
 
-const mergeObject = <A, B>(obj1: A, obj2: B) => ({ ...obj1, ...obj2 })
-export interface QueryAble<T extends Object, U> {
-    mapLeft<newT>(f: (_: T) => newT): QueryAble<newT, U>
-    mapRight<newU>(f: (_: U) => newU): QueryAble<T, newU>
-    include: <K extends IsOfType<T, Array<any>>, B extends Unpack<T[K]>, C extends keyof B>(
-        key: K,
-        f: Fun<InitialQueryAble<B>, QueryAble<Omit<B, C>, Pick<B, C>>>
-    ) => QueryAble<Omit<T, K>, U & PickNested<T, K, Pick<B, C>>>
-    select: <K extends keyof T>(...keys: K[]) => QueryAble<Omit<T, K>, U & Pick<T, K>>
-    Run: () => U
+export type QueryAble<a, b> = {
+    select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
+    include: <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
+        key: k,
+        f: Fun<InitialQueryAble<d>, QueryAble<Omit<d, c>, Pick<d, c>>>
+    ) => QueryAble<Omit<a, k>, b & Pick<a, k>>
+    run: () => Array<b>
 }
-export interface InitialQueryAble<U extends Object> {
-    select: <K extends keyof U>(...keys: K[]) => QueryAble<Omit<U, K>, Pick<U, K>>
-    include: <K extends IsOfType<U, Array<any>>, B extends Unpack<U[K]>, C extends keyof B>(
-        key: K,
-        f: Fun<InitialQueryAble<B>, QueryAble<Omit<B, C>, Pick<B, C>>>
-    ) => QueryAble<Omit<U, K>,  PickNested<U, K, Pick<B, C>>>
-    run: () => U
+export type InitialQueryAble<a> = {
+    select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
 }
 
-export const MakeQueryAble = <A extends Object>(obj: A): InitialQueryAble<A> => ({
-    select: function <K extends keyof A>(...keys: K[]): QueryAble<Omit<A, K>, Pick<A, K>> {
-        return QueryAble(omitMany(obj,keys), pickMany(obj, keys))
-    },
 
-    include: function <K extends IsOfType<A, Array<any>>, E extends Unpack<A[K]>, C extends keyof E>(
-        key: K,
-        f: Fun<InitialQueryAble<E>, QueryAble<Omit<E, C>, Pick<E, C>>>
-    ): QueryAble<Omit<A, K>,  PickNested<A, K, Pick<E, C>>> {
-        let arr = obj[key] as E[]
-        return QueryAble(omitOne(obj,key),  { [key]: arr.map((x) => f(MakeQueryAble(x)).Run()) } as PickNested<A, K, Pick<E, C>>)
+export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
+    select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, b & Pick<a, k>> {
+        return MakeQueryAble(
+            obj.map(
+                (left) => left.map((x) => omitMany(x, keys)),
+                (right) =>
+                    mergeZip(
+                        zip(
+                            right,
+                            obj.fst.map((x) => pickMany(x, keys))
+                        )
+                    )
+            )
+        )
     },
-    
-    run: () => obj,
+    include: function <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
+        key: k,
+        f: Fun<InitialQueryAble<d>, QueryAble<Omit<d, c>, Pick<d, c>>>
+    ): QueryAble<Omit<a, k>, b & Pick<a, k>> {
+        return MakeQueryAble(
+            obj.map(
+                (left) => left.map((x) => omitOne(x, key)),
+                (right) =>
+                    mergeZip(
+                        zip(
+                            right,
+                            obj.fst.map((x) => ({ [key]: f(makeInitialQuery(State(x[key] as any))).run() } as any))
+                        )
+                    )
+            )
+        )
+    },
+    run: function (): Array<b> {
+        return obj.snd.toArray()
+    },
 })
 
-export const QueryAble = <A extends Object, B>(obj: A, newObj: B): QueryAble<A, B> => ({
-    mapLeft: function <newA>(f: (_: A) => newA): QueryAble<newA, B> {
-        return QueryAble(f(obj), newObj)
+export const makeInitialQuery = <a>(state: Query<a, Unit>): InitialQueryAble<a> => ({
+    select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, Pick<a, k>> {
+        return MakeQueryAble(
+            state.map(
+                (left) => left.map((x) => omitMany(x, keys)),
+                (right) => state.fst.map((x) => pickMany(x, keys))
+            )
+        )
     },
-    mapRight: function <newB>(f: (_: B) => newB): QueryAble<A, newB> {
-        return QueryAble(obj, f(newObj))
-    },
-    select: function <K extends keyof A>(this: QueryAble<A, B>, ...keys: K[]): QueryAble<Omit<A, K>, B & Pick<A, K>> {
-        return this.mapRight((x) => mergeObject(x, pickMany(obj, keys))).mapLeft((x) => omitMany(x, keys))
-    },
-
-    include: function <K extends IsOfType<A, Array<any>>, E extends Unpack<A[K]>, C extends keyof E>(
-        key: K,
-        f: Fun<InitialQueryAble<E>, QueryAble<Omit<E, C>, Pick<E, C>>>
-    ): QueryAble<Omit<A, K>, B & PickNested<A, K, Pick<E, C>>> {
-        let arr = obj[key] as E[]
-        return this.mapRight((b) =>
-            mergeObject(b, { [key]: arr.map((x) => f(MakeQueryAble(x)).Run()) } as PickNested<A, K, Pick<E, C>>)
-        ).mapLeft((x) => omitMany(x, [key]))
-    },
-    Run: () => newObj,
 })
 
-const test = MakeQueryAble(student).include('Grades', p => p.select('CourseName')).select('Surname').Run()
 
-console.log(test)
+const data = State<Student, Unit>([student1, student2, student3])
+const vvvv = makeInitialQuery(data)
+    .select('Surname')
+    .include('Grades', (g) => g.select('CourseName').include('Teachers', (t) => t.select('Profession','Name','Surname')))
+    .run()
+
+console.log(vvvv[0].Grades[0].Teachers[0])
