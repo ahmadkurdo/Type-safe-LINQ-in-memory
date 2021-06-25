@@ -79,19 +79,6 @@ export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: 
 
 type Unit = {}
 
-export type Comperator<T> = {
-    ASC: Fun<T, boolean>
-    DESC: Fun<T, boolean>
-}
-
-export const Comperator = <T>(comparer: T): Comperator<T> => ({
-    ASC: x => x <= comparer,
-    DESC: x => comparer <= x
-})
-export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
-    MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
-
-
 
 export let pickMany = <T, K extends keyof T>(entity: T, props: K[]) => {
     return props.reduce((s, prop) => ((s[prop] = entity[prop]), s), {} as Pick<T, K>)
@@ -165,6 +152,9 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
         return obj.snd.toArray()
     },
 })
+
+export const State = <a, b>(x: a[], y?: b[]): Query<a, b> =>
+    MakePair(MakeList<a>(x), MakeList<b>(y ? y : []))
 
 export const makeInitialQuery = <a>(state: Query<a, Unit>): InitialQueryAble<a> => ({
     select: function <k extends keyof a>(...keys: k[]): QueryAble<Omit<a, k>, Pick<a, k>> {
