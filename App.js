@@ -52,7 +52,22 @@ var student3 = {
             CourseId: 15,
             CourseName: 'Math',
             Teachers: [
-                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Eningeer' },
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Engineer' },
+                { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
+            ]
+        },
+    ]
+};
+var student4 = {
+    Name: 'Ahmed',
+    Surname: 'Ali',
+    Grades: [
+        {
+            Grade: 8,
+            CourseId: 15,
+            CourseName: 'Math',
+            Teachers: [
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Engineer' },
                 { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
             ]
         },
@@ -85,6 +100,10 @@ var MakeQueryAble = function (obj) { return ({
             return List_1.mergeZip(List_1.zip(right, obj.fst.map(function (x) { return exports.pickMany(x, keys); })));
         }));
     },
+    groupBy: function (key) {
+        var ddd = obj.mapRight(function (x) { return List_1.MakeList([groupBy(x, key)]); });
+        return exports.MakeQueryAble(ddd);
+    },
     OrderBy: function (key, order) {
         return exports.MakeQueryAble(obj.mapRight(function (x) { return x.sort(key, order); }));
     },
@@ -113,10 +132,24 @@ var makeInitialQuerAble = function (state) { return ({
     }
 }); };
 exports.makeInitialQuerAble = makeInitialQuerAble;
-var data = exports.State([student1, student2, student3]);
+var data = exports.State([student1, student4, student3, student2]);
 var vvvv = exports.makeInitialQuerAble(data)
     .select('Surname')
-    .include('Grades', function (g) { return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); }); })
-    .OrderBy('Surname', 'DESC')
+    .include('Grades', function (g) {
+    return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); });
+})
+    .groupBy('Surname').select('Name')
     .run();
+function groupBy(list, key, record) {
+    if (record === void 0) { record = {}; }
+    if (list.isEmpty()) {
+        return record;
+    }
+    var elem = list.head();
+    var innerKey = elem[key];
+    Object.keys(record).indexOf(innerKey.toString()) >= 0
+        ? record[innerKey].push(exports.omitOne(elem, key))
+        : (record[innerKey] = [exports.omitOne(elem, key)]);
+    return groupBy(list.tail(), key, record);
+}
 console.log(vvvv);

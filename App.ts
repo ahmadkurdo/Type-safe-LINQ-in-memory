@@ -60,23 +60,38 @@ let student3: Student = {
             CourseId: 15,
             CourseName: 'Math',
             Teachers: [
-                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Eningeer' },
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Engineer' },
                 { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
             ],
         },
     ],
 }
-
+let student4: Student = {
+    Name: 'Ahmed',
+    Surname: 'Ali',
+    Grades: [
+        {
+            Grade: 8,
+            CourseId: 15,
+            CourseName: 'Math',
+            Teachers: [
+                { Name: 'Mohammed', Surname: 'Abbadi', Profession: 'Softwaren Engineer' },
+                { Name: 'Francesco', Surname: 'Di Giacomo', Profession: 'Softwaren Architect' },
+            ],
+        },
+    ],
+}
 type Fun<A, B> = (_: A) => B
 
 type Unpack<A> = A extends Array<infer b> ? b : never
 
-export type Query<a, b> = Pair<List<a>, List<b>>
+type Query<a, b> = Pair<List<a>, List<b>>
 
 export type IsOfType<A, B> = { [C in keyof A]: A[C] extends B ? C : never }[keyof A]
 
 export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: A[x] } & { [x in K]: b[] }
 
+type Group<a, b, k extends keyof a> = Omit<a, k>
 type Unit = {}
 
 export let pickMany = <T, K extends keyof T>(entity: T, props: K[]) => {
@@ -99,6 +114,7 @@ export let omitMany = <T, K extends keyof T>(entity: T, props: K[]): Omit<T, K> 
 export type QueryAble<a, b> = {
     select: <k extends keyof a>(...keys: k[]) => QueryAble<Omit<a, k>, Pick<a, k>>
     OrderBy: <k extends IsNotOfType<b, List<any> | Array<any>>>(key: k, order: 'ASC' | 'DESC') => QueryAble<a, b>
+    groupBy: <k extends  IsNotOfType<b, List<any>  | Array<any> > , d extends isType<b[k], string>>(key: k) => QueryAble<a,Record<d, Omit<b, k>[]>>
     include: <k extends IsOfType<a, Array<any>>, d extends Unpack<a[k]>, c extends keyof d>(
         key: k,
         f: Fun<InitialQueryAble<d>, QueryAble<Omit<d, c>, Pick<d, c>>>
@@ -123,6 +139,12 @@ export const MakeQueryAble = <a, b>(obj: Query<a, b>): QueryAble<a, b> => ({
                     )
             )
         )
+    },
+    groupBy: function <k extends keyof b , d extends isType<b[k], string>>(key: k) : QueryAble<a,Record<d, Omit<b, k>[]>>{
+         const ddd = obj.mapRight(x => MakeList([groupBy(x,key)]))
+
+
+         return MakeQueryAble(ddd)
     },
     OrderBy: function <k extends IsNotOfType<b, List<any> | Array<any>>>(
         key: k,
@@ -165,13 +187,34 @@ export const makeInitialQuerAble = <a>(state: Query<a, Unit>): InitialQueryAble<
     },
 })
 
-const data = State<Student, Unit>([student1, student2, student3])
+const data = State<Student, Unit>([student1, student4, student3, student2])
 const vvvv = makeInitialQuerAble(data)
-    .select('Surname')
+    .select('Surname','Name')
     .include('Grades', (g) =>
-        g.select('Grade').include('Teachers', (t) => t.select('Profession', 'Name', 'Surname').OrderBy('Name', 'ASC'))
+        g.select('Grade').include('Teachers', (t) => t.select('Profession', 'Name', 'Surname'))
     )
-    .OrderBy('Surname', 'DESC')
+    .OrderBy('Name', 'DESC').groupBy('Surname')
     .run()
+
+
+
+type isType<A,B> = A extends B ? A : never
+
+function groupBy<a, k extends keyof a, d extends isType<a[k], string>>(
+    list: List<a>,
+    key: k,
+    record: Record<d, Omit<a, k>[]> = {} as Record<d, Omit<a, k>[]>
+): Record<d, Omit<a, k>[]> {
+    if (list.isEmpty()) {
+        return record
+    }
+    const elem = list.head()
+    const innerKey = elem[key] as d
+    Object.keys(record).indexOf(innerKey.toString()) >= 0
+        ? record[innerKey].push(omitOne(elem, key))
+        : (record[innerKey] = [omitOne(elem, key)])
+
+    return groupBy(list.tail(), key, record)
+}
 
 console.log(vvvv)

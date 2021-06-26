@@ -103,3 +103,5 @@ const test = MakeQueryAble(student)
     .Run()
 
 console.log(test)
+
+
