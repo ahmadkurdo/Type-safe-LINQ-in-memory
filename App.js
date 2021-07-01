@@ -134,11 +134,11 @@ var makeInitialQuerAble = function (state) { return ({
 exports.makeInitialQuerAble = makeInitialQuerAble;
 var data = exports.State([student1, student4, student3, student2]);
 var vvvv = exports.makeInitialQuerAble(data)
-    .select('Surname')
+    .select('Surname', 'Name')
     .include('Grades', function (g) {
     return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); });
 })
-    .groupBy('Surname').select('Name')
+    .OrderBy('Name', 'DESC').groupBy('Name')
     .run();
 function groupBy(list, key, record) {
     if (record === void 0) { record = {}; }
@@ -152,4 +152,4 @@ function groupBy(list, key, record) {
         : (record[innerKey] = [exports.omitOne(elem, key)]);
     return groupBy(list.tail(), key, record);
 }
-console.log(vvvv);
+console.log(vvvv[0]['Mohammed']);

@@ -90,8 +90,6 @@ type Query<a, b> = Pair<List<a>, List<b>>
 export type IsOfType<A, B> = { [C in keyof A]: A[C] extends B ? C : never }[keyof A]
 
 export type PickNested<A, K extends keyof A, b> = { [x in Exclude<keyof A, K>]: A[x] } & { [x in K]: b[] }
-
-type Group<a, b, k extends keyof a> = Omit<a, k>
 type Unit = {}
 
 export let pickMany = <T, K extends keyof T>(entity: T, props: K[]) => {
@@ -193,7 +191,7 @@ const vvvv = makeInitialQuerAble(data)
     .include('Grades', (g) =>
         g.select('Grade').include('Teachers', (t) => t.select('Profession', 'Name', 'Surname'))
     )
-    .OrderBy('Name', 'DESC').groupBy('Surname')
+    .OrderBy('Name', 'DESC').groupBy('Name')
     .run()
 
 
@@ -217,4 +215,4 @@ function groupBy<a, k extends keyof a, d extends isType<a[k], string>>(
     return groupBy(list.tail(), key, record)
 }
 
-console.log(vvvv)
+console.log(vvvv[0]['Mohammed'])
