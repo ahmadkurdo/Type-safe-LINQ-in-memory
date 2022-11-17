@@ -85,61 +85,11 @@ exports.omitOne = omitOne;
 var omitMany = function (entity, props) {
     var result = entity;
     props.forEach(function (prop) {
-        result = exports.omitOne(result, prop);
+        result = (0, exports.omitOne)(result, prop);
     });
     return result;
 };
 exports.omitMany = omitMany;
-var MakeQueryAble = function (obj) { return ({
-    select: function () {
-        var keys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            keys[_i] = arguments[_i];
-        }
-        return exports.MakeQueryAble(obj.map(function (left) { return left.map(function (x) { return exports.omitMany(x, keys); }); }, function (right) {
-            return List_1.mergeZip(List_1.zip(right, obj.fst.map(function (x) { return exports.pickMany(x, keys); })));
-        }));
-    },
-    groupBy: function (key) {
-        var ddd = obj.mapRight(function (x) { return List_1.MakeList([groupBy(x, key)]); });
-        return exports.MakeQueryAble(ddd);
-    },
-    OrderBy: function (key, order) {
-        return exports.MakeQueryAble(obj.mapRight(function (x) { return x.sort(key, order); }));
-    },
-    include: function (key, f) {
-        return exports.MakeQueryAble(obj.map(function (left) { return left.map(function (x) { return exports.omitOne(x, key); }); }, function (right) {
-            return List_1.mergeZip(List_1.zip(right, obj.fst.map(function (x) {
-                var _a;
-                return (_a = {}, _a[key] = f(exports.makeInitialQuerAble(exports.State(x[key]))).run(), _a);
-            })));
-        }));
-    },
-    run: function () {
-        return obj.snd.toArray();
-    }
-}); };
-exports.MakeQueryAble = MakeQueryAble;
-var State = function (x, y) { return List_1.MakePair(List_1.MakeList(x), List_1.MakeList(y ? y : [])); };
-exports.State = State;
-var makeInitialQuerAble = function (state) { return ({
-    select: function () {
-        var keys = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            keys[_i] = arguments[_i];
-        }
-        return exports.MakeQueryAble(state.map(function (left) { return left.map(function (x) { return exports.omitMany(x, keys); }); }, function (right) { return state.fst.map(function (x) { return exports.pickMany(x, keys); }); }));
-    }
-}); };
-exports.makeInitialQuerAble = makeInitialQuerAble;
-var data = exports.State([student1, student4, student3, student2]);
-var vvvv = exports.makeInitialQuerAble(data)
-    .select('Surname', 'Name')
-    .include('Grades', function (g) {
-    return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); });
-})
-    .OrderBy('Name', 'DESC').groupBy('Name')
-    .run();
 function groupBy(list, key, record) {
     if (record === void 0) { record = {}; }
     if (list.isEmpty()) {
@@ -148,8 +98,58 @@ function groupBy(list, key, record) {
     var elem = list.head();
     var innerKey = elem[key];
     Object.keys(record).indexOf(innerKey.toString()) >= 0
-        ? record[innerKey].push(exports.omitOne(elem, key))
-        : (record[innerKey] = [exports.omitOne(elem, key)]);
+        ? record[innerKey].push((0, exports.omitOne)(elem, key))
+        : (record[innerKey] = [(0, exports.omitOne)(elem, key)]);
     return groupBy(list.tail(), key, record);
 }
-console.log(vvvv[0]['Mohammed']);
+var MakeQueryAble = function (obj) { return ({
+    select: function () {
+        var keys = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            keys[_i] = arguments[_i];
+        }
+        return (0, exports.MakeQueryAble)(obj.map(function (left) { return left.map(function (x) { return (0, exports.omitMany)(x, keys); }); }, function (right) {
+            return (0, List_1.mergeZip)((0, List_1.zip)(right, obj.fst.map(function (x) { return (0, exports.pickMany)(x, keys); })));
+        }));
+    },
+    groupBy: function (key) {
+        var ddd = obj.mapRight(function (x) { return (0, List_1.MakeList)([groupBy(x, key)]); });
+        return (0, exports.MakeQueryAble)(ddd);
+    },
+    OrderBy: function (key, order) {
+        return (0, exports.MakeQueryAble)(obj.mapRight(function (x) { return x.sort(key, order); }));
+    },
+    include: function (key, f) {
+        return (0, exports.MakeQueryAble)(obj.map(function (left) { return left.map(function (x) { return (0, exports.omitOne)(x, key); }); }, function (right) {
+            return (0, List_1.mergeZip)((0, List_1.zip)(right, obj.fst.map(function (x) {
+                var _a;
+                return (_a = {}, _a[key] = f((0, exports.makeInitialQuerAble)((0, exports.State)(x[key]))).run(), _a);
+            })));
+        }));
+    },
+    run: function () {
+        return obj.snd.toArray();
+    }
+}); };
+exports.MakeQueryAble = MakeQueryAble;
+var State = function (x, y) { return (0, List_1.MakePair)((0, List_1.MakeList)(x), (0, List_1.MakeList)(y ? y : [])); };
+exports.State = State;
+var makeInitialQuerAble = function (state) { return ({
+    select: function () {
+        var keys = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            keys[_i] = arguments[_i];
+        }
+        return (0, exports.MakeQueryAble)(state.map(function (left) { return left.map(function (x) { return (0, exports.omitMany)(x, keys); }); }, function (right) { return state.fst.map(function (x) { return (0, exports.pickMany)(x, keys); }); }));
+    }
+}); };
+exports.makeInitialQuerAble = makeInitialQuerAble;
+var data = (0, exports.State)([student1, student4, student3, student2]);
+var queryResult = (0, exports.makeInitialQuerAble)(data)
+    .select('Surname', 'Name')
+    .include('Grades', function (g) {
+    return g.select('Grade').include('Teachers', function (t) { return t.select('Profession', 'Name', 'Surname'); });
+})
+    .OrderBy('Name', 'DESC').groupBy('Name')
+    .run();
+console.log(JSON.stringify(queryResult));

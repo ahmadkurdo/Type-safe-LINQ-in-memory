@@ -85,6 +85,8 @@ type Fun<A, B> = (_: A) => B
 
 type Unpack<A> = A extends Array<infer b> ? b : never
 
+type isType<A,B> = A extends B ? A : never
+
 type Query<a, b> = Pair<List<a>, List<b>>
 
 export type IsOfType<A, B> = { [C in keyof A]: A[C] extends B ? C : never }[keyof A]
@@ -107,6 +109,23 @@ export let omitMany = <T, K extends keyof T>(entity: T, props: K[]): Omit<T, K> 
         result = omitOne(result, prop as unknown as keyof Omit<T, K>) as Omit<T, K>
     })
     return result
+}
+
+function groupBy<a, k extends keyof a, d extends isType<a[k], string>>(
+    list: List<a>,
+    key: k,
+    record: Record<d, Omit<a, k>[]> = {} as Record<d, Omit<a, k>[]>
+): Record<d, Omit<a, k>[]> {
+    if (list.isEmpty()) {
+        return record
+    }
+    const elem = list.head()
+    const innerKey = elem[key] as d
+    Object.keys(record).indexOf(innerKey.toString()) >= 0
+        ? record[innerKey].push(omitOne(elem, key))
+        : (record[innerKey] = [omitOne(elem, key)])
+
+    return groupBy(list.tail(), key, record)
 }
 
 export type QueryAble<a, b> = {
@@ -186,7 +205,7 @@ export const makeInitialQuerAble = <a>(state: Query<a, Unit>): InitialQueryAble<
 })
 
 const data = State<Student, Unit>([student1, student4, student3, student2])
-const vvvv = makeInitialQuerAble(data)
+const queryResult = makeInitialQuerAble(data)
     .select('Surname','Name')
     .include('Grades', (g) =>
         g.select('Grade').include('Teachers', (t) => t.select('Profession', 'Name', 'Surname'))
@@ -195,24 +214,4 @@ const vvvv = makeInitialQuerAble(data)
     .run()
 
 
-
-type isType<A,B> = A extends B ? A : never
-
-function groupBy<a, k extends keyof a, d extends isType<a[k], string>>(
-    list: List<a>,
-    key: k,
-    record: Record<d, Omit<a, k>[]> = {} as Record<d, Omit<a, k>[]>
-): Record<d, Omit<a, k>[]> {
-    if (list.isEmpty()) {
-        return record
-    }
-    const elem = list.head()
-    const innerKey = elem[key] as d
-    Object.keys(record).indexOf(innerKey.toString()) >= 0
-        ? record[innerKey].push(omitOne(elem, key))
-        : (record[innerKey] = [omitOne(elem, key)])
-
-    return groupBy(list.tail(), key, record)
-}
-
-console.log(vvvv[0]['Mohammed'])
+console.log(JSON.stringify(queryResult))

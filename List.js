@@ -14,20 +14,20 @@ exports.__esModule = true;
 exports.mergeZip = exports.zip = exports.MakeList = exports.MakePair = exports.State = exports.Unit = void 0;
 exports.Unit = {};
 var State = function (selectable, selected) {
-    return exports.MakePair(exports.MakeList(selectable), exports.MakeList(selected ? selected : []));
+    return (0, exports.MakePair)((0, exports.MakeList)(selectable), (0, exports.MakeList)(selected ? selected : []));
 };
 exports.State = State;
 var MakePair = function (fst, snd) { return ({
     fst: fst,
     snd: snd,
     mapLeft: function (f) {
-        return exports.MakePair(f(this.fst), this.snd);
+        return (0, exports.MakePair)(f(this.fst), this.snd);
     },
     mapRight: function (g) {
-        return exports.MakePair(this.fst, g(this.snd));
+        return (0, exports.MakePair)(this.fst, g(this.snd));
     },
     map: function (f, g) {
-        return exports.MakePair(f(this.fst), g(this.snd));
+        return (0, exports.MakePair)(f(this.fst), g(this.snd));
     }
 }); };
 exports.MakePair = MakePair;
@@ -37,7 +37,7 @@ var MakeList = function (data) { return ({
         return this.data[0];
     },
     tail: function () {
-        return exports.MakeList(this.data.slice(1));
+        return (0, exports.MakeList)(this.data.slice(1));
     },
     isEmpty: function () {
         return this.data.length === 0;
@@ -46,16 +46,16 @@ var MakeList = function (data) { return ({
         return this.data.length;
     },
     map: function (f) {
-        return exports.MakeList(this.data.map(f));
+        return (0, exports.MakeList)(this.data.map(f));
     },
     concat: function (l2) {
-        return exports.MakeList(this.data.concat(l2.data));
+        return (0, exports.MakeList)(this.data.concat(l2.data));
     },
     toArray: function () {
         return this.data;
     },
     sort: function (key, order) {
-        return exports.MakeList(data.sort(function (obj1, obj2) {
+        return (0, exports.MakeList)(data.sort(function (obj1, obj2) {
             switch (order) {
                 case 'ASC': {
                     return obj1[key] > obj2[key] ? 1 : -1;
@@ -70,11 +70,11 @@ var MakeList = function (data) { return ({
 exports.MakeList = MakeList;
 var zip = function (l1, l2) {
     return l1.isEmpty() || l2.isEmpty()
-        ? exports.MakeList([])
-        : exports.MakeList([exports.MakePair(l1.head(), l2.head())]).concat(exports.zip(l1.tail(), l2.tail()));
+        ? (0, exports.MakeList)([])
+        : (0, exports.MakeList)([(0, exports.MakePair)(l1.head(), l2.head())]).concat((0, exports.zip)(l1.tail(), l2.tail()));
 };
 exports.zip = zip;
 var mergeZip = function (lst) {
-    return exports.MakeList(lst.map(function (x) { return (__assign(__assign({}, x.fst), x.snd)); }).toArray());
+    return (0, exports.MakeList)(lst.map(function (x) { return (__assign(__assign({}, x.fst), x.snd)); }).toArray());
 };
 exports.mergeZip = mergeZip;

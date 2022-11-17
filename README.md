@@ -9,7 +9,7 @@ Optional operators (for a higher grade) are\:
 - `OrderBy`;
 - `GroupBy`.
 
-Your project will generate _a chain of executable functions_, in the lazy style.
+The project will generate _a chain of executable functions_, in the lazy style.
 
 ## Code examples
 An example of code could be the following\:
@@ -20,7 +20,7 @@ students.Select("Name", "Surname").Include("Grades", q =>
 )
 ```
 
-We expect this code to make use of the `keyof` type operator, the _type homomorphism_, and in general the [advanced types of TypeScript](https://www.typescriptlang.org/docs/handbook/advanced-types.html). This implies that the code above will have type\:
+The code makes use of the `keyof` type operator, the _type homomorphism_, and in general the [advanced types of TypeScript](https://www.typescriptlang.org/docs/handbook/advanced-types.html). This implies that the code above will have type\:
 
 ```typescript
 {
@@ -44,13 +44,3 @@ students.Select("Name", "Surname").Include("Grades", q =>
 ```
 
 will produce a compiler error, because `Address` is not a valid field in the type definition of `Grade`.
-
-## Evaluation criteria
-The bare minimum (5.5) for this project is a type\safe implementation of `Select` and `Include`.
-
-The `Where` operator alone will increase the grade by at most 2.5 points.
-
-The remaining operators yield 1 point each.
-
-### First presentation
-The first presentation must showcase work for at least 3 points.
